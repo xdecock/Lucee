@@ -27,8 +27,6 @@ package lucee.commons.collection;
 import java.util.Random;
 
 import lucee.commons.io.SystemUtil;
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
 
 /**
  * Hashing utilities.
