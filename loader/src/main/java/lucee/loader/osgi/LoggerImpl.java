@@ -50,6 +50,7 @@ public class LoggerImpl extends Logger {
 	@Override
 	protected void doLog(final Bundle bundle, final ServiceReference sr,
 			final int level, final String msg, Throwable throwable) {
+		if (level > getLogLevel()) return;
 		String s = "";
 		if (sr != null)
 			s = s + "SvcRef " + sr + " ";
