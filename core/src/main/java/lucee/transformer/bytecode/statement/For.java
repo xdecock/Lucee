@@ -26,6 +26,7 @@ import lucee.transformer.bytecode.BytecodeContext;
 import lucee.transformer.bytecode.util.ASMUtil;
 import lucee.transformer.bytecode.util.ExpressionUtil;
 import lucee.transformer.expression.Expression;
+import lucee.transformer.bytecode.util.Types;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
