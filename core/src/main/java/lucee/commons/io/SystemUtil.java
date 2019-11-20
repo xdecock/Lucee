@@ -1269,8 +1269,8 @@ public final class SystemUtil {
 
 	@Deprecated
 	public static void stop(Thread thread) {
-		if (thread.isAlive()) {
-			thread.stop();
+		if(thread.isAlive()) {
+			thread.interrupt();
 			/*
 			 * try{ thread.stop(new StopException(thread)); }
 			 * catch(UnsupportedOperationException uoe){// Java 8 does not support
@@ -1580,7 +1580,7 @@ class StopThread extends Thread {
 			return;
 		if (thread.isAlive()) {
 			pci.setTimeoutStackTrace();
-			thread.stop();
+			thread.interrupt();
 		}
 	}
 }
@@ -1591,7 +1591,7 @@ class MacAddressWrap implements ObjectWrap, Castable, Serializable {
 
 	@Override
 	public Object getEmbededObject() throws PageException {
-		try {
+		try {	
 			return SystemUtil.getMacAddress();
 		} catch (Exception e) {
 			throw Caster.toPageException(e);
