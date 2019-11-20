@@ -29,7 +29,9 @@ import lucee.transformer.expression.Expression;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 
 public final class For extends StatementBaseNoFinal implements FlowControlBreak,FlowControlContinue,HasBody {
 
@@ -37,6 +39,9 @@ public final class For extends StatementBaseNoFinal implements FlowControlBreak,
 	private Expression condition;
 	private Expression update;
 	private Body body;
+	private final static Type TYPE_THREAD = Type.getType(Thread.class);
+	private final static Type TYPE_EXCEPTION = Type.getType(InterruptedException.class);
+	private final static Method METHOD_INTERRUPTED = new Method("interrupted", Type.BOOLEAN_TYPE, new Type[] {});
 	
 	//private static final int I=1;
 
@@ -68,10 +73,14 @@ public final class For extends StatementBaseNoFinal implements FlowControlBreak,
 	@Override
 	public void _writeOut(BytecodeContext bc) throws TransformerException {
 		GeneratorAdapter adapter = bc.getAdapter();
+		final int toIt = adapter.newLocal(Types.ITERATOR);
 		Label beforeInit = new Label();
 		Label afterInit = new Label();
 		Label afterUpdate = new Label();
-
+		Label endPreempt = new Label();
+		adapter.push(0);
+		adapter.storeLocal(toIt, Type.INT_TYPE);
+		
 		ExpressionUtil.visitLine(bc, getStart());
 		adapter.visitLabel(beforeInit);
 		if(init!=null) {
@@ -89,6 +98,24 @@ public final class For extends StatementBaseNoFinal implements FlowControlBreak,
 			update.writeOut(bc, Expression.MODE_VALUE);
 			ASMUtil.pop(adapter,update, Expression.MODE_VALUE); 
 		}
+
+		// Check Once every 10K iteration
+		adapter.iinc(toIt, 1);
+		adapter.loadLocal(toIt);
+		adapter.push(10000);
+		adapter.ifICmp(Opcodes.IFLT, afterUpdate);
+		// reset counter
+		adapter.push(0);
+		adapter.storeLocal(toIt);
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to afterUpdate
+		adapter.ifZCmp(Opcodes.IFEQ, afterUpdate);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in For loop");
+		// ExpressionUtil.visitLine(bc, getStartLine());
+		adapter.visitLabel(afterUpdate);
+		
 		//ExpressionUtil.visitLine(bc, getStartLine());
 		adapter.visitLabel(afterUpdate);
 		
@@ -98,6 +125,14 @@ public final class For extends StatementBaseNoFinal implements FlowControlBreak,
 		//ExpressionUtil.visitLine(bc, getEndLine());
 		adapter.visitLabel(end);
 		
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to endPreempt
+		adapter.ifZCmp(Opcodes.IFEQ, endPreempt);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in For loop");
+		// ExpressionUtil.visitLine(bc, getStartLine());
+		adapter.visitLabel(endPreempt);
 	}
 
 	@Override

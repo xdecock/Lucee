@@ -24,10 +24,14 @@ import lucee.transformer.bytecode.Body;
 import lucee.transformer.bytecode.BytecodeContext;
 import lucee.transformer.expression.ExprBoolean;
 import lucee.transformer.expression.Expression;
+import lucee.transformer.bytecode.util.Types;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
+
 
 public final class DoWhile extends StatementBaseNoFinal implements FlowControlBreak,FlowControlContinue,HasBody {
 
@@ -40,6 +44,9 @@ public final class DoWhile extends StatementBaseNoFinal implements FlowControlBr
 	private String label;
 	
 	
+	private final static Type TYPE_THREAD = Type.getType(Thread.class);
+	private final static Type TYPE_EXCEPTION = Type.getType(InterruptedException.class);
+	private final static Method METHOD_INTERRUPTED = new Method("interrupted", Type.BOOLEAN_TYPE, new Type[] {});
 	/**
 	 * Constructor of the class
 	 * @param expr
@@ -57,9 +64,27 @@ public final class DoWhile extends StatementBaseNoFinal implements FlowControlBr
 	@Override
 	public void _writeOut(BytecodeContext bc) throws TransformerException {
 		GeneratorAdapter adapter = bc.getAdapter();
+		final int toIt = adapter.newLocal(Types.ITERATOR);
+		adapter.push(0);
+		adapter.storeLocal(toIt, Type.INT_TYPE);
+
 		adapter.visitLabel(begin);
 		body.writeOut(bc);
 		
+		// Check Once every 10K iteration
+		adapter.iinc(toIt, 1);
+		adapter.loadLocal(toIt);
+		adapter.push(10000);
+		adapter.ifICmp(Opcodes.IFLT, beforeEnd);
+		// reset counter
+		adapter.push(0);
+		adapter.storeLocal(toIt);
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to beforeEnd
+		adapter.ifZCmp(Opcodes.IFEQ, beforeEnd);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "timeout in do {} while() loop");
 		adapter.visitLabel(beforeEnd);
 		
 		
@@ -68,6 +93,15 @@ public final class DoWhile extends StatementBaseNoFinal implements FlowControlBr
 		
 		adapter.visitLabel(end);
 		
+		Label endPreempt = new Label();
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to endPreempt
+		adapter.ifZCmp(Opcodes.IFEQ, endPreempt);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in For loop");
+		// ExpressionUtil.visitLine(bc, getStartLine());
+		adapter.visitLabel(endPreempt);
 	}
 
 	@Override

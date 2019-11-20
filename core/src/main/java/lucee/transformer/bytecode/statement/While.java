@@ -24,11 +24,14 @@ import lucee.transformer.bytecode.Body;
 import lucee.transformer.bytecode.BytecodeContext;
 import lucee.transformer.expression.ExprBoolean;
 import lucee.transformer.expression.Expression;
+import lucee.transformer.bytecode.util.Types;
+
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.GeneratorAdapter;
-
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 public final class While extends StatementBaseNoFinal implements FlowControlBreak,FlowControlContinue,HasBody {
 	
 	private ExprBoolean expr;
@@ -40,6 +43,10 @@ public final class While extends StatementBaseNoFinal implements FlowControlBrea
 	private String label;
 
 
+
+	private final static Type TYPE_THREAD = Type.getType(Thread.class);
+	private final static Type TYPE_EXCEPTION = Type.getType(InterruptedException.class);
+	private final static Method METHOD_INTERRUPTED = new Method("interrupted", Type.BOOLEAN_TYPE, new Type[] {});
 
 	/**
 	 * Constructor of the class
@@ -69,15 +76,42 @@ public final class While extends StatementBaseNoFinal implements FlowControlBrea
 	@Override
 	public void _writeOut(BytecodeContext bc) throws TransformerException {
 		GeneratorAdapter adapter = bc.getAdapter();
+		final int toIt = adapter.newLocal(Types.ITERATOR);
+		adapter.push(0);
+		adapter.storeLocal(toIt, Type.INT_TYPE);
 		adapter.visitLabel(begin);
 		
 		expr.writeOut(bc, Expression.MODE_VALUE);
 		adapter.ifZCmp(Opcodes.IFEQ, end);
 		
 		body.writeOut(bc);
-		adapter.visitJumpInsn(Opcodes.GOTO, begin);
+
+		// Check Once every 10K iteration
+		adapter.iinc(toIt, 1);
+		adapter.loadLocal(toIt);
+		adapter.push(10000);
+		adapter.ifICmp(Opcodes.IFLT, begin);
+		// reset counter
+		adapter.push(0);
+		adapter.storeLocal(toIt);
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to begin
+		adapter.ifZCmp(Opcodes.IFEQ, begin);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in While loop");
 		
 		adapter.visitLabel(end);
+
+		Label endPreempt = new Label();
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to endPreempt
+		adapter.ifZCmp(Opcodes.IFEQ, endPreempt);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in For loop");
+		// ExpressionUtil.visitLine(bc, getStartLine());
+		adapter.visitLabel(endPreempt);		
 	}
 
 	@Override

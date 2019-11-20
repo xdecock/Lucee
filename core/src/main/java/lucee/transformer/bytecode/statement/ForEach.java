@@ -30,6 +30,8 @@ import lucee.transformer.bytecode.visitor.OnFinally;
 import lucee.transformer.bytecode.visitor.TryFinallyVisitor;
 import lucee.transformer.expression.Expression;
 import lucee.transformer.expression.var.Variable;
+import lucee.transformer.bytecode.util.Types;
+
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -54,7 +56,10 @@ public final class ForEach extends StatementBase implements FlowControlBreak,Flo
 	public static final Method RESET = new Method("reset",Types.VOID,new Type[]{Types.ITERATOR});
 
     //private static final Type COLLECTION_UTIL = Type.getType(CollectionUtil.class);
-
+	private final static Type TYPE_THREAD = Type.getType(Thread.class);
+	private final static Type TYPE_EXCEPTION = Type.getType(InterruptedException.class);
+	private final static Method METHOD_INTERRUPTED = new Method("interrupted", Type.BOOLEAN_TYPE, new Type[] {});
+	
 	private Label begin = new Label();
 	private Label end = new Label();
 	private FlowControlFinal fcf;
@@ -80,8 +85,12 @@ public final class ForEach extends StatementBase implements FlowControlBreak,Flo
 	@Override
 	public void _writeOut(BytecodeContext bc) throws TransformerException {
 		GeneratorAdapter adapter = bc.getAdapter();
+		final int toIt = adapter.newLocal(Types.ITERATOR);
 		final int it=adapter.newLocal(Types.ITERATOR);
 		final int item=adapter.newLocal(Types.REFERENCE);
+		
+		adapter.push(0);
+		adapter.storeLocal(toIt, Type.INT_TYPE);
 		
 		//Value
 			// ForEachUtil.toIterator(value)
@@ -130,8 +139,35 @@ public final class ForEach extends StatementBase implements FlowControlBreak,Flo
 				
 				// Body
 				body.writeOut(bc);
-				adapter.visitJumpInsn(Opcodes.GOTO, begin);
+
+		// Check Once every 10K iteration
+		adapter.iinc(toIt, 1);
+		adapter.loadLocal(toIt);
+		adapter.push(10000);
+		adapter.ifICmp(Opcodes.IFLT, begin);
+		// reset counter
+		adapter.push(0);
+		adapter.storeLocal(toIt);
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to begin
+		adapter.ifZCmp(Opcodes.IFEQ, begin);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in Foreach loop");
+
+
 				adapter.visitLabel(end);
+
+		Label endPreempt = new Label();
+		// Check if the thread is interrupted
+		adapter.invokeStatic(TYPE_THREAD, METHOD_INTERRUPTED);
+		// Thread hasn't been interrupted, go to endPreempt
+		adapter.ifZCmp(Opcodes.IFEQ, endPreempt);
+		// Thread interrupted, throw Interrupted Exception
+		adapter.throwException(TYPE_EXCEPTION, "Timeout in For loop");
+		// ExpressionUtil.visitLine(bc, getStartLine());
+		adapter.visitLabel(endPreempt);
+
 			tfv.visitTryEnd(bc);
 		
 	}
