@@ -1446,8 +1446,8 @@ public final class Http extends BodyTagImpl {
 					Registry<ConnectionSocketFactory> reg = RegistryBuilder.<ConnectionSocketFactory>create().register("http", PlainConnectionSocketFactory.getSocketFactory())
 									.register("https", gsslsf).build();
 					gcm = new PoolingHttpClientConnectionManager(new DefaultHttpClientConnectionOperatorImpl(reg), null, 15000, TimeUnit.MILLISECONDS);
-					gcm.setDefaultMaxPerRoute(50);
-					gcm.setMaxTotal(500);
+					gcm.setDefaultMaxPerRoute(200);
+					gcm.setMaxTotal(750);
 					gcm.setDefaultSocketConfig(SocketConfig.copy(SocketConfig.DEFAULT).setTcpNoDelay(true).setSoReuseAddress(true).setSoLinger(0).build());
 					gcm.setValidateAfterInactivity(300);
 				}
