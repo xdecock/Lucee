@@ -163,8 +163,6 @@ public final class SystemUtil {
 	private static final Class[] EMPTY_CLASS = new Class[0];
 	private static final Object[] EMPTY_OBJ = new Object[0];
 
-	private static final Class[] EMPTY_CLASS = new Class[0];
-	private static final Object[] EMPTY_OBJ = new Object[0];
 
 	static {
 		// OS
@@ -1554,23 +1552,6 @@ public final class SystemUtil {
 				return booted.booleanValue();
 			} catch (Exception e) {
 			}
-		}
-		return true;
-	}
-
-	public static boolean isBooted() {
-		if(Boolean.TRUE.equals(booted)) return true;
-		
-		Class clazz = ClassUtil.loadClass("jdk.internal.misc.VM",null); // Java == 9
-		if(clazz==null)  clazz = ClassUtil.loadClass("sun.misc.VM",null); // Java < 9
-		
-		if(clazz!=null) {
-			try {
-				Method m = clazz.getMethod("isBooted", EMPTY_CLASS);
-				booted = Caster.toBoolean(m.invoke(null, EMPTY_OBJ));
-				return booted.booleanValue();
-			}
-			catch(Exception e) {}
 		}
 		return true;
 	}
