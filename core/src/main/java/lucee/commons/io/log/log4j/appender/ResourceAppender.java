@@ -36,7 +36,7 @@ import org.apache.log4j.helpers.QuietWriter;
 
 public class ResourceAppender extends WriterAppender implements AppenderState {
 
-  private static final int DEFAULT_BUFFER_SIZE = 8*1024; 
+  private static final int DEFAULT_BUFFER_SIZE = 128*1024; 
 
 /** Controls file truncatation. The default value for this variable
    * is <code>true</code>, meaning that by default a
@@ -74,7 +74,7 @@ private Object sync=new SerializableObject();
 
     <p>The file will be appended to.  */
   public ResourceAppender(Layout layout, Resource res,Charset charset,RetireListener listener) throws IOException {
-    this(layout, res,charset, true,false,60/* a minute */,DEFAULT_BUFFER_SIZE,listener);
+    this(layout, res,charset, true,true,60/* a minute */,DEFAULT_BUFFER_SIZE,listener);
   }
 
 
@@ -88,12 +88,12 @@ private Object sync=new SerializableObject();
     <code>filename</code> will be truncated before being opened.
   */
   public ResourceAppender(Layout layout, Resource res,Charset charset, boolean append,RetireListener listener) throws IOException {
-	  this(layout,res,charset,append,false,60/* a minute */,DEFAULT_BUFFER_SIZE,listener);
+	  this(layout,res,charset,append,true,60/* a minute */,DEFAULT_BUFFER_SIZE,listener);
   }
   
 
   public ResourceAppender(Layout layout, Resource res,Charset charset, boolean append, int timeout,RetireListener listener) throws IOException {
-	  this(layout,res,charset,append,false,timeout,DEFAULT_BUFFER_SIZE,listener);
+	  this(layout,res,charset,append,true,timeout,DEFAULT_BUFFER_SIZE,listener);
   }
 
   /**
