@@ -33,6 +33,7 @@ import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.WriterAppender;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.helpers.QuietWriter;
+import org.apache.log4j.spi.LoggingEvent;
 
 public class ResourceAppender extends WriterAppender implements AppenderState {
 
@@ -249,7 +250,7 @@ protected void reset() {
   }
 
   @Override
-  protected boolean shouldFlush() {
+  protected boolean shouldFlush(LoggingEvent event) {
     double currentTime=System.currentTimeMillis();
     if (currentTime-lastFlush > 1000) {
       lastFlush = currentTime;
