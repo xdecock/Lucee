@@ -29,6 +29,7 @@ import org.apache.log4j.RollingFileAppender;
 import org.apache.log4j.WriterAppender;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.helpers.QuietWriter;
+import org.apache.log4j.spi.LoggingEvent;
 
 import lucee.commons.io.res.Resource;
 import lucee.commons.io.retirement.RetireListener;
@@ -38,7 +39,7 @@ import lucee.commons.lang.SerializableObject;
 public class ResourceAppender extends WriterAppender implements AppenderState, Appender {
 
 	private static final int DEFAULT_BUFFER_SIZE = 128 * 1024;
-
+	private double lastFlush;
 	/**
 	 * Controls file truncation. The default value for this variable is <code>true</code>, meaning that
 	 * by default a <code>FileAppender</code> will append to an existing file and not truncate it.
@@ -233,5 +234,14 @@ public class ResourceAppender extends WriterAppender implements AppenderState, A
 	@Override
 	public boolean isClosed() {
 		return closed;
+	}
+	@Override
+	protected boolean shouldFlush(LoggingEvent event) {
+		double currentTime=System.currentTimeMillis();
+		if (currentTime-lastFlush > 1000) {
+			lastFlush = currentTime;
+			return true;
+		}
+		return false;
 	}
 }
