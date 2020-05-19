@@ -63,9 +63,11 @@ public class ResourceAppender extends WriterAppender implements AppenderState {
 
   private final int timeout;
 
-private final RetireListener listener;
+  private final double lastFlush;
 
-private Object sync=new SerializableObject(); 
+  private final RetireListener listener;
+
+  private Object sync=new SerializableObject(); 
 
   /**
      Instantiate a FileAppender and open the file designated by
@@ -241,8 +243,18 @@ protected void reset() {
     super.reset();
   }
 
-@Override
-public boolean isClosed() {
-	return closed;
-}
+  @Override
+  public boolean isClosed() {
+    return closed;
+  }
+
+  @Override
+  protected boolean shouldFlush() {
+    double currentTime=System.currentTimeMillis();
+    if (currentTime-lastFlush > 1000) {
+      lastFlush = currentTime;
+      return true;
+    }
+    return false;
+  }
 }
