@@ -63,7 +63,7 @@ public class ResourceAppender extends WriterAppender implements AppenderState {
 
   private final int timeout;
 
-  private final double lastFlush;
+  private double lastFlush;
 
   private final RetireListener listener;
 
