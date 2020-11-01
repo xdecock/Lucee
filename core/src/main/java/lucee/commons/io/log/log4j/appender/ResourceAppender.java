@@ -37,7 +37,7 @@ import lucee.commons.lang.SerializableObject;
 
 public class ResourceAppender extends WriterAppender implements AppenderState, Appender {
 
-	private static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
+	private static final int DEFAULT_BUFFER_SIZE = 128 * 1024;
 
 	/**
 	 * Controls file truncation. The default value for this variable is <code>true</code>, meaning that
