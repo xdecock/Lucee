@@ -3754,7 +3754,7 @@ To use cached data, the tag must be called with the exact same arguments. Only u
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 			<introduced>6.0.0.96</introduced>
-			<description>Flag allowing to disable connection reuse on one off requests.<description>
+			<description>Flag allowing to disable connection reuse on one off requests.</description>
 		</attribute>
 		<attribute>
 			<type>object</type>
