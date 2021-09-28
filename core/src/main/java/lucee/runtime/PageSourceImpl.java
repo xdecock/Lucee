@@ -79,7 +79,7 @@ public final class PageSourceImpl implements PageSource {
 	private String className;
 	private String fileName;
 
-	private Resource physcalSource;
+	private Resource physicalSource;
 	private Resource archiveSource;
 	private String compName;
 	private PageAndClassName pcn = new PageAndClassName();
@@ -552,15 +552,15 @@ public final class PageSourceImpl implements PageSource {
 	 */
 	@Override
 	public Resource getPhyscalFile() {
-		if (physcalSource == null) {
+		if (physicalSource == null) {
 			if (!mapping.hasPhysical()) {
 				return null;
 			}
 			Resource tmp = mapping.getPhysical().getRealResource(relPath);
-			physcalSource = ResourceUtil.toExactResource(tmp);
+			physicalSource = ResourceUtil.toExactResource(tmp);
 			// fix if the case not match
-			if (!tmp.getAbsolutePath().equals(physcalSource.getAbsolutePath())) {
-				String relpath = extractRealpath(relPath, physcalSource.getAbsolutePath());
+			if (!tmp.getAbsolutePath().equals(physicalSource.getAbsolutePath())) {
+				String relpath = extractRealpath(relPath, physicalSource.getAbsolutePath());
 				// just a security!
 				if (relPath.equalsIgnoreCase(relpath)) {
 					this.relPath = relpath;
@@ -568,7 +568,7 @@ public final class PageSourceImpl implements PageSource {
 				}
 			}
 		}
-		return physcalSource;
+		return physicalSource;
 	}
 
 	public Resource getArchiveFile() {
