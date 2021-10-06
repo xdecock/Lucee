@@ -10,7 +10,7 @@ stages:
 ci_build:
   stage: build
   script:
-    - mvn -e -f loader/pom.xml clean install --settings travis-settings.xml;
+    - mvn -e -f loader/pom.xml clean install --settings travis-settings.xml -Dtestcases=false;
   artifacts:
     paths:
       - loader/target/lucee-*.jar
