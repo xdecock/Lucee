@@ -16,4 +16,4 @@ ci_build:
       - loader/target/lucee-*.jar
     expire_in: 1 week
   only:
-    - /^[0-9]+\.{3}[0-9]+\-patch[0-9]+$/
+    - /^([0-9]+\.){3}[0-9]+\-patch[0-9]+$/
