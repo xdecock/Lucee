@@ -1,0 +1,17 @@
+image: openjdk:8
+
+before_script:
+  - apt-get update
+  - apt-get -y install ant maven
+
+stages:
+  - build
+
+ci_build:
+  stage: build
+  script:
+    - mvn -e -f loader/pom.xml clean install --settings travis-settings.xml;
+  artifacts:
+    paths:
+      - loader/target/lucee-*.jar
+    expire_in: 1 week
