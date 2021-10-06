@@ -34,6 +34,7 @@ import lucee.commons.io.res.filter.ExtensionResourceFilter;
 import lucee.commons.io.res.filter.ResourceFilter;
 import lucee.commons.io.res.util.ResourceUtil;
 import lucee.commons.lang.ExceptionUtil;
+import lucee.commons.net.http.httpclient.HTTPEngine4Impl;
 import lucee.runtime.CFMLFactoryImpl;
 import lucee.runtime.Mapping;
 import lucee.runtime.config.ConfigPro;
@@ -341,6 +342,14 @@ public final class Controler extends Thread {
 				catch (Throwable t) {
 					ExceptionUtil.rethrowIfNecessary(t);
 				}
+
+				// Clear unused http connections
+				try {
+					HTTPEngine4Impl.closeIdleConnections();
+				}
+				catch (Exception e) {
+				}
+
 				// clear all unused scopes
 				try {
 					cfmlFactory.getScopeContext().clearUnused();
